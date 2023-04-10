@@ -1,0 +1,18 @@
+.drag-drop-file-root {
+  .drop-area {
+    width: 10rem;
+    height: 15rem;
+    border: 1px dashed #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .text-placeholder {
+      color: #ccc;
+    }
+  }
+
+  .preview {
+
+  }
+}
