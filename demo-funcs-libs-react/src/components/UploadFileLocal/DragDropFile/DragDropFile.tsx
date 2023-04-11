@@ -1,8 +1,9 @@
 import React, {useEffect, useState} from 'react';
 import './DragDropFile.scss';
-import {preview} from "vite";
 import DragDropItem from "./DrapDropItem/DragDropItem";
 import {v4 as uuidv4} from 'uuid';
+import CSVFileValidator from 'csv-file-validator'
+import {configValidateCSV} from "../../../utils/configValidateCSV";
 
 export interface IFilePreview {
     name: string,
@@ -16,6 +17,7 @@ const DragDropFile = (props: DragDropFileProp) => {
     const {allowFileTypes = undefined} = props;
     const [filesPreview, setFilesPreview] = useState<IFilePreview[]>([]);
     const [filesUploadMap, setFilesUploadMap] = useState(new Map());
+
     useEffect(() => {
         const files: IFilePreview[] = [];
         filesUploadMap.forEach((item: any, key: number) => {
@@ -43,25 +45,31 @@ const DragDropFile = (props: DragDropFileProp) => {
         for (let i = 0; i < length; i++) {
             const reader = new FileReader();
             reader.onload = () => {
-                if(allowFileTypes && !allowFileTypes?.includes(droppedFiles[i]?.type)){
+                if (allowFileTypes && !allowFileTypes?.includes(droppedFiles[i]?.type)) {
                     //Change UI at here implement
-                    console.log('droppedFiles[i]?.type: ', droppedFiles[i]?.type);
                     alert(`only accept these file: ',${JSON.stringify(allowFileTypes)}`);
-                }else{
-                newFiles.push({
-                    name: droppedFiles[i].name,
-                    type: droppedFiles[i].type,
-                    size: droppedFiles[i].size,
-                    data: reader.result
-                });
-                if (length === newFiles.length) {
-                    const map = new Map(filesUploadMap.entries());
-                    newFiles.forEach((file: any) => {
-                        const fileId = uuidv4();
-                        map.set(fileId, file);
-                    })
-                    setFilesUploadMap(map);
-                }
+                } else {
+                    newFiles.push({
+                        name: droppedFiles[i].name,
+                        type: droppedFiles[i].type,
+                        size: droppedFiles[i].size,
+                        data: droppedFiles[i]
+                    });
+                    // CSVFileValidator(droppedFiles[i], config)
+                    //     .then(csvData => {
+                    //         // csvData.data // Array of objects from file
+                    //         console.log( csvData.data);
+                    //         // csvData.inValidData // Array of error messages
+                    //     })
+                    //     .catch(err => {})
+                    if (length === newFiles.length) {
+                        const map = new Map(filesUploadMap.entries());
+                        newFiles.forEach((file: any) => {
+                            const fileId = uuidv4();
+                            map.set(fileId, file);
+                        })
+                        setFilesUploadMap(map);
+                    }
                 }
             };
 
@@ -79,6 +87,21 @@ const DragDropFile = (props: DragDropFileProp) => {
         setFilesUploadMap(newMap);
     }
 
+    function preSubmitSCV() {
+        const files = filesUploadMap.entries();
+        for (const [index, file] of files) {
+            // @ts-ignore
+            CSVFileValidator(file.data, configValidateCSV)
+                .then((data: any) => {
+                    console.log(data);
+                    console.log(data?.inValidData);
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
+        }
+    }
+
     return (
         <div className={`drag-drop-file-root`}>
             <div className={'drop-area'} onDragOver={(event) => allowDrop(event)} onDrop={(event) => onDrop(event)}
@@ -92,6 +115,9 @@ const DragDropFile = (props: DragDropFileProp) => {
                         onDelete={handleDeleteFileItem}
                         file={item} key={item.id}/>
                 ))}
+            </div>
+            <div>
+                <button onClick={preSubmitSCV}>submit</button>
             </div>
         </div>
     );
